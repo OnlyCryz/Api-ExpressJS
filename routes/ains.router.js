@@ -40,12 +40,12 @@ router.get('/', async (req, res) => {
  *        description: Ains no encontrado
  */
 router.get(
-  '/:id',
+  '/:arains',
   validatorHandler(getAinsDto, 'params'),
   async (req, res, next) => {
     try {
-      const { id } = req.params;
-      const ains = await service.findOne(parseInt(id));
+      const { arains } = req.params;
+      const ains = await service.findOne(parseInt(arains));
       res.json(ains);
     } catch (err) {
       next(err);
@@ -66,12 +66,22 @@ router.get(
  *        description: Creacion exitosa
  *      '400':
  *        description: Solicitud incorrecta
+ *      '409':
+ *        description: Ains duplicado
  */
-router.post('/', validatorHandler(createAinsDto, 'body'), async (req, res) => {
-  const body = req.body;
-  const newAins = await service.create(body);
-  res.status(201).json(newAins);
-});
+router.post(
+  '/',
+  validatorHandler(createAinsDto, 'body'),
+  async (req, res, next) => {
+    try {
+      const body = req.body;
+      const newAins = await service.create(body);
+      res.status(201).json(newAins);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 /**
  * @swagger
@@ -90,16 +100,18 @@ router.post('/', validatorHandler(createAinsDto, 'body'), async (req, res) => {
  *        description: Solicitud incorrecta
  *      '404':
  *        description: Ains no encontrado
+ *      '409':
+ *        description: Ains duplicado
  */
 router.patch(
-  '/:id',
+  '/:arains',
   validatorHandler(getAinsDto, 'params'),
   validatorHandler(updateAinsDto, 'body'),
   async (req, res, next) => {
     try {
-      const { id } = req.params;
+      const { arains } = req.params;
       const body = req.body;
-      const ains = await service.update(parseInt(id), body);
+      const ains = await service.update(parseInt(arains), body);
       res.json(ains);
     } catch (err) {
       next(err);
@@ -124,12 +136,12 @@ router.patch(
  *        description: Ains no encontrado
  */
 router.delete(
-  '/:id',
+  '/:arains',
   validatorHandler(getAinsDto, 'params'),
   async (req, res, next) => {
     try {
-      const { id } = req.params;
-      const ains = await service.delete(parseInt(id));
+      const { arains } = req.params;
+      const ains = await service.delete(parseInt(arains));
       res.json(ains);
     } catch (err) {
       next(err);

@@ -1,54 +1,69 @@
 const boom = require('@hapi/boom');
+const { getConnection, directQuery } = require('../sybase');
 
 class AinsService {
   constructor() {
-    this.ains = [
-      { id: 1, name: 'vale', arains: 2000 },
-      { id: 2, name: 'cryz', arains: 1000 },
-    ];
+    this.ains = directQuery();
   }
 
   async find() {
-    return this.ains;
-  }
-
-  async findOne(id) {
-    const ains = this.ains.find((item) => item.id === id);
-    if (!ains) {
-      throw boom.notFound('Ains not found');
-    }
+    const db = await getConnection();
+    var ains = await db.queryAsync('SELECT arains FROM ivr_db.dbo.am_ains');
+    db.disconnect();
     return ains;
   }
 
+  async findOne(id) {
+    const db = await getConnection();
+    var ains = await db.queryAsync('SELECT arains FROM ivr_db.dbo.am_ains');
+    const res = ains.find((item) => item.arains === id);
+    db.disconnect();
+    if (!res) throw boom.notFound('Ains not found');
+    return res;
+  }
+
   async create(data) {
-    const newAins = {
-      id: 3,
-      ...data,
-    };
-    this.ains.push(newAins);
-    return newAins;
+    const db = await getConnection();
+    var ains = await db.queryAsync('SELECT arains FROM ivr_db.dbo.am_ains');
+    if (ains.find((item) => item.arains == data.arains)) {
+      db.disconnect();
+      throw boom.conflict('Ains duplicate');
+    }
+    await db.queryAsync(
+      `INSERT INTO ivr_db.dbo.am_ains (arains) VALUES(${data.arains})`
+    );
+    db.disconnect();
+    return data;
   }
 
   async update(id, changes) {
-    const index = this.ains.findIndex((item) => item.id === id);
-    if (index === -1) {
+    const db = await getConnection();
+    var ains = await db.queryAsync('SELECT arains FROM ivr_db.dbo.am_ains');
+    if (!ains.find((item) => item.arains == id)) {
+      db.disconnect();
       throw boom.notFound('Ains not found');
     }
-    const ain = this.ains[index];
-    this.ains[index] = {
-      ...ain,
-      ...changes,
-    };
-    return this.ains[index];
+    if (ains.find((item) => item.arains == changes.arains)) {
+      db.disconnect();
+      throw boom.conflict('Ains duplicate');
+    }
+    await db.queryAsync(
+      `UPDATE ivr_db.dbo.am_ains SET arains = ${changes.arains}  WHERE arains = ${id}`
+    );
+    db.disconnect();
+    return changes;
   }
 
   async delete(id) {
-    const index = this.ains.findIndex((item) => item.id === id);
-    if (index === -1) {
+    const db = await getConnection();
+    var ains = await db.queryAsync('SELECT arains FROM ivr_db.dbo.am_ains');
+    if (!ains.find((item) => item.arains == id)) {
+      db.disconnect();
       throw boom.notFound('Ains not found');
     }
-    this.ains.splice(index, 1);
-    return { message: 'Ains deleted', id };
+    await db.queryAsync(`DELETE FROM ivr_db.dbo.am_ains WHERE arains=${id}`);
+    db.disconnect();
+    return { message: 'Ains deleted', arains: id };
   }
 }
 
